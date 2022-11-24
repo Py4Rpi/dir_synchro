@@ -43,6 +43,8 @@ It will keep track of all operations in the mentioned log file so it can be anal
 
 To stop the program execution just press CTRL+C in the terminal window with running program. 
 
+So far its tested only under Windows 10 operating system but it should run fine on Linux systems too.
+
 This code still can be improved by many ways. New versions will be uploaded later.
 
 ## Help
