@@ -8,7 +8,7 @@ Test task program
 Hello!
 
 This is my test task from employer. It is a simple Python program that synchronizes two folders periodically.
-The algorythm uses hash of files and folders to compare them between the source and destination directories.
+The algorithm uses hash of files and folders to compare them between the source and destination directories.
 
  
 ## Getting Started
@@ -17,7 +17,7 @@ The algorythm uses hash of files and folders to compare them between the source 
 
 I used Python 3.8. in this project.
 
-There is only one external librariy to be used - dirhash. Othres are native python modules.
+There is only one external librariy to be used - dirhash. Others are native python modules.
 
 ### Installing
 
