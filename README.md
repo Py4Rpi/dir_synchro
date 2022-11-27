@@ -43,7 +43,7 @@ with appropriate arguments. It takes four arguments: path to source directory, p
 be created, path and name of log file (.log), interval between synchronizations in seconds:
 
 ```
-python main.py C:\Input\sync D:\Output C:\Output\sync_log_file.log 3
+python main.py C:\Input\sync D:\Output D:\Output\sync_log_file.log 3
 
 ```
 
