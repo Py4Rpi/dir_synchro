@@ -9,14 +9,14 @@ import argparse
 from dirhash import dirhash
 
 
-def pth_validate(pth):
+def pth_validate(pth):  # CHK PATH ARGUMENT VALIDITY
     if os.path.isdir(pth):
         return pth
     else:
         raise argparse.ArgumentTypeError(f"INCORRECT PATH:   {pth}")
 
 
-def log_pth_validate(pth):
+def log_pth_validate(pth):  # CHK LOG ARGUMENT VALIDITY
     filename, file_extension = os.path.splitext(pth)
     if os.path.isfile(pth):
         return pth
@@ -41,7 +41,6 @@ s = sched.scheduler(time.time, time.sleep)
 
 
 #   DIRECTORY SYNCHRONIZATION FUNCTION
-
 def synchronization():
     inpath = args.input
     outpath = args.output
@@ -65,56 +64,49 @@ def synchronization():
         logging.info(f'Source directory does not exist {inpath}\n')
 
     elif not os.path.exists(dst_pth):
-
         copy_tree(inpath, dst_pth)
+        print("Directories synchronization - OK\n")
 
     elif not len(lstdr(inpath)):  # CHK IF SRC IS EMPTY
-
         if len(lstdr(dst_pth)):
             rm_tree(dst_pth)
             copy_tree(inpath, dst_pth)
-
+            print("Directories synchronization - OK\n")
         elif not len(lstdr(dst_pth)):
-            print('Source directory is empty, nothing to sync\n')
+            print("Directories synchronization - OK\n")
 
     elif len(lstdr(inpath)):
         if not len(lstdr(dst_pth)):
             rm_tree(dst_pth)
             copy_tree(inpath, dst_pth)
+            print("Directories synchronization - OK\n")
 
         elif len(lstdr(dst_pth)):
             if dirhash(inpath, 'md5') == dirhash(dst_pth, 'md5'):  # COMPARING HASH OF SRC AND DST DIRS
                 print("Directories synchronization - OK\n")
 
-
             else:  # MAIN SYNC CODE
-
                 input_files = []
                 output_files = []
                 input_dirs = []
                 output_dirs = []
 
                 # COMPARE THE SUBDIRS BY OS.WALK AND MAKE THE LISTS OF TUPLES WITH RESULTS
-
                 for in_root, in_dirs, in_files in os.walk(inpath):  # SCAN SRC DIR
-
-                    sync_pth = pthjoin(outpath, *in_root.split("\\")[(len(inpath.split("\\")) - 1):])
-
+                    sync_pth = pthjoin(outpath, *in_root.split("\\")[(len(inpath.split("\\")) - 1):])  # SRC AND DST
+                    # PATH SYNC
                     for in_file in in_files:  # ADD SRC FILES
                         input_files.append(
                             (f"{hashlib.md5(open(f'{pthjoin(in_root, in_file)}', 'rb').read()).hexdigest()}",
                              f'{in_file}',))
 
-                    for dir in in_dirs:  # ADD SRC DIRS
-
-                        if len(lstdr(pthjoin(in_root, dir))):
-                            input_dirs.append(((dirhash(pthjoin(in_root, dir), 'md5')), dir,))
-
+                    for in_dir in in_dirs:  # ADD SRC DIRS
+                        if len(lstdr(pthjoin(in_root, in_dir))):
+                            input_dirs.append(((dirhash(pthjoin(in_root, in_dir), 'md5')), in_dir,))
                         else:
-                            input_dirs.append(('empty', dir))  # FOR MTY DIRS
+                            input_dirs.append(('empty', in_dir))  # FOR MTY DIRS
 
                     for out_root, out_dirs, out_files in os.walk(sync_pth):  # SCAN DST DIR
-
                         for out_file in out_files:  # ADD DST FILES
                             output_files.append(
                                 (f"{hashlib.md5(open(f'{pthjoin(out_root, out_file)}', 'rb').read()).hexdigest()}",
@@ -123,28 +115,25 @@ def synchronization():
                         for out_dir in out_dirs:  # ADD DST DIRS
                             if len(lstdr(pthjoin(out_root, out_dir))):
                                 output_dirs.append(((dirhash(pthjoin(out_root, out_dir), 'md5')), out_dir,))
-
                             else:
                                 output_dirs.append(('empty', out_dir))  # FOR MTY DIRS
-
                         break
 
                     # IF FILES NOT SYNC
-
                     if frozenset(input_files).difference(output_files) or frozenset(output_files).difference(
                             input_files):
 
                         # DELETE FILES FM DST
-                        for hs, nm in frozenset(output_files).difference(input_files):
-                            fdst_pth = str(pthjoin(sync_pth, nm))
+                        for hash_, name_ in frozenset(output_files).difference(input_files):
+                            fdst_pth = str(pthjoin(sync_pth, name_))
                             os.remove(fdst_pth)
                             print(f"Delete {fdst_pth}\n")
                             logging.info(f"Delete {fdst_pth}\n")
 
                         # COPY FILES TO DST
-                        for hs, nm in frozenset(input_files).difference(output_files):
-                            fsrc_pth = str(pthjoin(in_root, nm))
-                            fdst_pth = str(pthjoin(sync_pth, nm))
+                        for hash_, name_ in frozenset(input_files).difference(output_files):
+                            fsrc_pth = str(pthjoin(in_root, name_))
+                            fdst_pth = str(pthjoin(sync_pth, name_))
                             if os.path.exists(sync_pth):
                                 shutil.copy2(fsrc_pth, fdst_pth)
                                 print(f"Copy {fsrc_pth} to {fdst_pth}\n")
@@ -154,48 +143,38 @@ def synchronization():
                         output_files.clear()
 
                     # IF SUBDIRS NOT SYNC
-
                     if frozenset(input_dirs).difference(output_dirs) or frozenset(output_dirs).difference(input_dirs):
-                        for hs, nm in frozenset(input_dirs).difference(output_dirs):
+                        for hash_, name_ in frozenset(input_dirs).difference(output_dirs):
                             dir_same_hash_diff_name = [it for it in frozenset(output_dirs).difference(input_dirs)
-                                                       if it[0] == hs and it[1] != nm]
+                                                       if it[0] == hash_ and it[1] != name_]
 
                             # RENAME DIRS IN DST
                             if dir_same_hash_diff_name:
                                 src_pth = str(pthjoin(sync_pth, dir_same_hash_diff_name[0][1]))
-                                dst_pth = str(pthjoin(sync_pth, nm))
+                                dst_pth = str(pthjoin(sync_pth, name_))
                                 os.rename(src_pth, dst_pth)
                                 print(f"Rename {src_pth} to {dst_pth}\n")
                                 logging.info(f"Rename {src_pth} to {dst_pth}\n")
 
                         # DELETE DIRS IN DST
-                        for hs, nm in frozenset(output_dirs).difference(input_dirs):
-
+                        for hash_, name_ in frozenset(output_dirs).difference(input_dirs):
                             out_dir_diff_hash_diff_name = [it for it in
                                                            frozenset(input_dirs).difference(output_dirs)
-                                                           if it[1] == nm]
-
+                                                           if it[1] == name_]
                             if not out_dir_diff_hash_diff_name:
-                                dst_pth = str(pthjoin(sync_pth, nm))
-
+                                dst_pth = str(pthjoin(sync_pth, name_))
                                 rm_tree(dst_pth)
 
                         # COPY DIR TO DST
-
-                        for hs, nm in frozenset(input_dirs).difference(output_dirs):
-
+                        for hash_, name_ in frozenset(input_dirs).difference(output_dirs):
                             in_dir_diff_hash_diff_name = [it for it in
                                                           frozenset(output_dirs).difference(input_dirs)
-                                                          if it[0] == hs or it[1] == nm]
-
+                                                          if it[0] == hash_ or it[1] == name_]
                             if not in_dir_diff_hash_diff_name:
-                                src_pth = str(pthjoin(in_root, nm))
-                                dst_pth = str(pthjoin(sync_pth, nm))
-
+                                src_pth = str(pthjoin(in_root, name_))
+                                dst_pth = str(pthjoin(sync_pth, name_))
                                 try:
-
                                     rm_tree(dst_pth)
-
                                 except:
                                     pass
                                 copy_tree(src_pth, dst_pth)
@@ -207,7 +186,6 @@ def synchronization():
 
 
                     # ALL DIRS AND FILES SYNC OK
-
                     else:
                         input_files.clear()
                         output_files.clear()
@@ -219,19 +197,19 @@ def synchronization():
 
 
 if __name__ == "__main__":
-    print("\nDirectories synchronization running\n"
+    print("\nDirectories synchronization running...\n"
           f"Input: {args.input}\n"
           f"Output: {args.output}\n"
           f"Log file: {args.log}\n\n")
 
-    logging.info(f"Directories synchronization running.\n"
-                 f"Input: {args.input},\n"
-                 f"Output: {args.output},\n"
-                 f"Log file: {args.log}.\n")
+    logging.info(f"Directories synchronization running...\n"
+                 f"Input: {args.input}\n"
+                 f"Output: {args.output}\n"
+                 f"Log file: {args.log}\n")
 
     try:
         while True:
-            s.enter(args.interval, 0, synchronization)  # SCHEDULER
+            s.enter(abs(args.interval), 0, synchronization)  # SCHEDULER
             s.run()
 
     except KeyboardInterrupt:  # STOP EXEC BY CTRL+C
